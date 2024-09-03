@@ -1,0 +1,194 @@
+#include <ESP8266WiFi.h>
+#include <WiFiClient.h>
+#include <ESP8266WebServer.h>
+#include <LiquidCrystal_I2C.h>
+#include <Wire.h>
+
+
+LiquidCrystal_I2C lcd(0x27, 16, 2); //กำหนด Address ของจอให้ตรงรุ่น สำหรับจอ LCD ที่โค๊ดนี้ใช้เป็นเกณฑ์คือ จอ 20 คอร์ลัม 4 แถว
+// ข้อมูล Wi-Fi และ LCD
+const char* ssid = "AP_MCU";
+const char* password = "999999999";
+
+
+byte customChar[] = { // เ
+  B01000,
+  B01000,
+  B01000,
+  B01000,
+  B01000,
+  B01000,
+  B01100,
+  B01100
+};
+byte customChar1[] = { // เ
+  B01000,
+  B01000,
+  B01000,
+  B01000,
+  B01000,
+  B01000,
+  B01100,
+  B01100
+};
+byte customChar2[] = { // ข
+  B11010,
+  B11010,
+  B01010,
+  B01010,
+  B01010,
+  B01010,
+  B01010,
+  B01110
+};
+byte customChar3[] = { // ก
+  B01111,
+  B10001,
+  B01001,
+  B01001,
+  B01001,
+  B01001,
+  B01001,
+  B01001
+};
+byte customChar4[] = { // ♥
+  B00000,
+  B00000,
+  B01010,
+  B11111,
+  B11111,
+  B11111,
+  B01110,
+  B00100
+};
+
+
+// สร้าง Web Server
+ESP8266WebServer server(80);
+
+// ฟังก์ชันสำหรับจัดการคำขอ
+void handleRoot() {
+  String s = "<!DOCTYPE html><html>";
+s += "<head>";
+s += "<meta charset='UTF-8'>";
+s += "</head>";
+s += "<body style='font-size: 40px;'>";
+s += "<center>";
+s += "<form action='/connect' method='connect get'>";
+s += "<label>ตั้งค่า ESP8266 V3 เชื่อมต่อ wifi</label><br>";
+s += "<label style='background-color:powderblue;' >SSID:</label><br>";
+s += "<input type='text' name='ssid'><br>";
+s += "<label style='background-color:powderblue;'' >Password:</label><br>";
+s += "<input type='password' name='password'><br>";
+s += "<input type='submit' value='เชื่อมต่อ'>";
+s += "</form></body></html>";
+  server.send(200, "text/html", s);
+}
+
+void handleConnect() {
+  String ssid = server.arg("ssid");
+  String password = server.arg("password");
+  WiFi.begin(ssid.c_str(), password.c_str());
+  lcd.clear();
+  lcd.print("Connecting...");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    lcd.print(".");
+  }
+  lcd.clear();
+  lcd.print("Connected!");
+  lcd.setCursor(0, 1);
+  lcd.print(WiFi.localIP());
+  server.send(200, "text/plain", "Connected");
+}
+
+void setup() {
+
+  Serial.begin(9600);
+  lcd.init();
+  lcd.backlight();
+  
+  //นำตัวเก็บข้อมูลอักษรมาเปลี่ยนเป็นตัวแปรตามลำดับ
+  lcd.createChar(0, customChar); 
+  lcd.createChar(1, customChar1); 
+  lcd.createChar(2, customChar2);
+  lcd.createChar(3, customChar3);
+  lcd.createChar(4, customChar4);
+  //สร้างและแสดงผลตัวอักษรภาษาไทย
+  lcd.setCursor(3, 0);
+  lcd.write((byte)0); 
+  lcd.setCursor(4, 0);
+  lcd.write((byte)1);
+
+  lcd.setCursor(5, 0); 
+  lcd.write((byte)2); 
+
+  lcd.setCursor(6, 0); 
+  lcd.write((byte)3); 
+
+  lcd.setCursor(7, 0);
+  lcd.print(" MCU_AP");
+
+  lcd.setCursor(0, 0);
+  lcd.write((byte)4);
+  lcd.setCursor(1, 0);
+  lcd.write((byte)4);
+
+  lcd.setCursor(0, 1);
+  lcd.write((byte)4);
+  lcd.setCursor(1, 1);
+  lcd.write((byte)4);
+
+  lcd.setCursor(14, 0);
+  lcd.write((byte)4);
+  lcd.setCursor(15, 0);
+  lcd.write((byte)4);
+
+  lcd.setCursor(14, 1);
+  lcd.write((byte)4);
+  lcd.setCursor(15, 1);
+  lcd.write((byte)4);
+
+  lcd.setCursor(1, 1);
+  lcd.write((byte)4);
+  lcd.setCursor(1, 1);
+  lcd.write((byte)4);
+  lcd.setCursor(2, 1);
+  lcd.write((byte)4);
+  lcd.setCursor(3, 1);
+  lcd.write((byte)4);
+  lcd.setCursor(4, 1);
+  lcd.write((byte)4);
+  lcd.setCursor(5, 1);
+  lcd.write((byte)4);
+  lcd.setCursor(6, 1);
+  lcd.write((byte)4);
+  lcd.setCursor(7, 1);
+  lcd.write((byte)4);
+  lcd.setCursor(8, 1);
+  lcd.write((byte)4);
+  lcd.setCursor(9, 1);
+  lcd.write((byte)4);
+  lcd.setCursor(10, 1);
+  lcd.write((byte)4);
+  lcd.setCursor(11, 1);
+  lcd.write((byte)4);
+  lcd.setCursor(12, 1);
+  lcd.write((byte)4);
+  lcd.setCursor(13, 1);
+  lcd.write((byte)4);
+
+
+  WiFi.mode(WIFI_STA);
+  if (WiFi.status() != WL_CONNECTED) {
+    WiFi.mode(WIFI_AP);
+    WiFi.softAP(ssid, password);
+  }
+  server.on("/", handleRoot);
+  server.on("/connect", handleConnect);
+  server.begin();
+}
+
+void loop() {
+  server.handleClient();
+}
